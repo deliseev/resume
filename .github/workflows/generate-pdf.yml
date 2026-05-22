@@ -3,7 +3,7 @@ name: Generate Resume PDF
 on:
   push:
     branches:
-      - main # или master
+      - main
     paths:
       - "resume.json"
 
