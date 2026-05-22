@@ -67,7 +67,7 @@ jobs:
 
       # 5. Подготовка папки для публикации сайта
       - name: Prepare build directory
-        run: mkdir public
+        run: mkdir -p public
 
       # 6. Рендеринг HTML веб-страницы
       - name: Export HTML
