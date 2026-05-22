@@ -1,0 +1,49 @@
+name: Generate Resume PDF
+
+on:
+  push:
+    branches:
+      - main # или master (укажите имя вашей основной ветки)
+    paths:
+      - "resume.json" # Запускать сборку только при изменении самого файла резюме
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Скачивание исходного кода из репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Установка среды Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. Установка зависимостей проекта (resumed и темы оформления)
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Генерация PDF-документа
+      # Передаем флаг --puppeteer-arg для корректного запуска Chromium без песочницы внутри виртуальной машины GitHub
+      - name: Export PDF
+        run: npx resumed export resume.pdf -t jsonresume-theme-flat --puppeteer-arg="--no-sandbox"
+
+      # 5. Сохранение сгенерированного PDF обратно в репозиторий
+      - name: Commit and push PDF
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add resume.pdf
+
+          # Проверяем, изменился ли PDF-файл, чтобы не создавать пустых коммитов
+          if git diff --cached --quiet; then
+            echo "No changes in PDF"
+          else
+            # Метка [skip ci] в комментарии обязательна, чтобы коммит от имени экшена не вызвал бесконечный цикл проверок
+            git commit -m "chore: auto-generate resume.pdf [skip ci]"
+            git push
+          fi
