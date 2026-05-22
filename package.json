@@ -20,6 +20,7 @@
   "homepage": "https://github.com/deliseev/resume#readme",
   "devDependencies": {
     "jsonresume-theme-flat": "^0.3.7",
+    "puppeteer": "^24.43.1",
     "resumed": "^6.1.0"
   }
 }
