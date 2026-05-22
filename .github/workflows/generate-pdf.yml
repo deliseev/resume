@@ -6,30 +6,16 @@ on:
       - main # или master
     paths:
       - "resume.json"
-
-  workflow_dispatch:
-    inputs:
-      theme:
-        description: "Выберите шаблон (тему) для рендеринга"
-        required: true
-        default: "jsonresume-theme-stackoverflow-ru"
-        type: choice
-        options:
-          - jsonresume-theme-stackoverflow-ru
-          - jsonresume-theme-eloquent-ru
-          - jsonresume-theme-flat
-          - jsonresume-theme-even
+      - "custom-theme/**" # Запускать сборку при любых изменениях в коде шаблона
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
-# Добавляем права на запись в репозиторий и публикацию на Pages
 permissions:
   contents: write
   pages: write
   id-token: write
 
-# Предотвращает конфликты при одновременных деплоях
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -50,53 +36,43 @@ jobs:
           node-version: "24"
           cache: "npm"
 
-      # 3. Установка основных зависимостей
+      # 3. Установка основных зависимостей проекта (resumed, puppeteer, handlebars, moment)
       - name: Install core dependencies
         run: npm ci
 
-      # 4. Установка выбранной темы
-      - name: Install selected theme
-        run: |
-          THEME="${{ inputs.theme }}"
-          if [ -z "$THEME" ]; then
-            THEME="jsonresume-theme-stackoverflow-ru"
-          fi
-          echo "Используется тема: $THEME"
-          echo "THEME=$THEME" >> $GITHUB_ENV
-          npm install --no-save $THEME
-
-      # 5. Подготовка папки для публикации сайта
+      # 4. Подготовка папки для публикации сайта
       - name: Prepare build directory
         run: mkdir -p public
 
-      # 6. Рендеринг HTML веб-страницы
+      # 5. Рендеринг HTML веб-страницы с использованием локального шаблона
       - name: Export HTML
-        run: npx resumed render -o public/index.html -t $THEME
+        run: npx resumed render -o public/index.html -t "$(pwd)/custom-theme/index.js"
 
-      # 7. Генерация PDF
+      # 6. Генерация PDF в папку public с использованием локального шаблона
       - name: Export PDF
-        run: npx resumed export -o public/resume.pdf -t $THEME --puppeteer-arg="--no-sandbox" --wait-until networkidle0
+        run: npx resumed export -o public/resume.pdf -t "$(pwd)/custom-theme/index.js" --puppeteer-arg="--no-sandbox" --wait-until networkidle0
 
-      # 8. Сохранение PDF обратно в ветку репозитория
+      # 7. Сохранение PDF обратно в ветку репозитория (внутри папки public)
+      # Используем флаг -f (force) на случай, если папка public находится в вашем .gitignore
       - name: Commit and push PDF
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add public/resume.pdf
+          git add -f public/resume.pdf
           if git diff --cached --quiet; then
             echo "PDF не изменился"
           else
-            git commit -m "chore: auto-generate resume.pdf with $THEME [skip ci]"
+            git commit -m "chore: auto-generate public/resume.pdf with custom local theme [skip ci]"
             git push
           fi
 
-      # 9. Загрузка папки public как артефакта для GitHub Pages
+      # 8. Загрузка папки public на GitHub Pages
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "public"
 
-      # 10. Публикация сайта на GitHub Pages
+      # 9. Публикация сайта на GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
