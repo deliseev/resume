@@ -3,47 +3,70 @@ name: Generate Resume PDF
 on:
   push:
     branches:
-      - main # или master (укажите имя вашей основной ветки)
+      - main # или master
     paths:
-      - "resume.json" # Запускать сборку только при изменении самого файла резюме
+      - "resume.json"
+
+  # Настройка ручного запуска с параметрами
+  workflow_dispatch:
+    inputs:
+      theme:
+        description: "Выберите шаблон (тему) для рендеринга"
+        required: true
+        default: "jsonresume-theme-flat"
+        type: choice
+        options:
+          - jsonresume-theme-flat
+          - jsonresume-theme-even
+          - jsonresume-theme-elegant
+          - jsonresume-theme-kendall
+          - jsonresume-theme-modern
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Скачивание исходного кода из репозитория
+      # 1. Скачивание кода репозитория
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Установка среды Node.js
+      # 2. Установка Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
-      # 3. Установка зависимостей проекта (resumed и темы оформления)
-      - name: Install dependencies
+      # 3. Установка основных зависимостей (resumed и puppeteer)
+      - name: Install core dependencies
         run: npm ci
 
-      # 4. Генерация PDF-документа
-      # Передаем флаг --puppeteer-arg для корректного запуска Chromium без песочницы внутри виртуальной машины GitHub
-      - name: Export PDF
-        run: npx resumed export resume.json -o resume.pdf -t jsonresume-theme-flat --puppeteer-arg="--no-sandbox"
+      # 4. Определение выбранной темы и её динамическая установка
+      # Если запуск ручной — берем выбранную тему, если автоматический (push) — тему по умолчанию
+      - name: Install selected theme
+        run: |
+          THEME="${{ inputs.theme }}"
+          if [ -z "$THEME" ]; then
+            THEME="jsonresume-theme-flat"
+          fi
+          echo "Используется тема: $THEME"
+          echo "THEME=$THEME" >> $GITHUB_ENV
+          npm install --no-save $THEME
 
-      # 5. Сохранение сгенерированного PDF обратно в репозиторий
+      # 5. Генерация PDF с выбранной темой
+      - name: Export PDF
+        run: npx resumed export -o resume.pdf -t $THEME --puppeteer-arg="--no-sandbox"
+
+      # 6. Сохранение сгенерированного PDF обратно в репозиторий
       - name: Commit and push PDF
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add resume.pdf
-
-          # Проверяем, изменился ли PDF-файл, чтобы не создавать пустых коммитов
           if git diff --cached --quiet; then
-            echo "No changes in PDF"
+            echo "PDF не изменился"
           else
-            # Метка [skip ci] в комментарии обязательна, чтобы коммит от имени экшена не вызвал бесконечный цикл проверок
-            git commit -m "chore: auto-generate resume.pdf [skip ci]"
+            git commit -m "chore: auto-generate resume.pdf with $THEME [skip ci]"
             git push
           fi
