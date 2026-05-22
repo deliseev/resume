@@ -7,22 +7,19 @@ on:
     paths:
       - "resume.json"
 
-  # Настройка ручного запуска с параметрами
   workflow_dispatch:
     inputs:
       theme:
         description: "Выберите шаблон (тему) для рендеринга"
         required: true
-        default: "jsonresume-theme-flat"
+        default: "jsonresume-theme-stackoverflow-ru" # Делаем по умолчанию русскую тему Stack Overflow
         type: choice
         options:
+          - jsonresume-theme-stackoverflow-ru
+          - jsonresume-theme-eloquent-ru
           - jsonresume-theme-flat
           - jsonresume-theme-even
-          - jsonresume-theme-elegant
-          - jsonresume-theme-kendall
-          - jsonresume-theme-modern
 
-# Добавляем переменную для принудительного использования Node.js 24
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -39,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
 
       # 3. Установка основных зависимостей (resumed и puppeteer)
@@ -47,12 +44,11 @@ jobs:
         run: npm ci
 
       # 4. Определение выбранной темы и её динамическая установка
-      # Если запуск ручной — берем выбранную тему, если автоматический (push) — тему по умолчанию
       - name: Install selected theme
         run: |
           THEME="${{ inputs.theme }}"
           if [ -z "$THEME" ]; then
-            THEME="jsonresume-theme-flat"
+            THEME="jsonresume-theme-stackoverflow-ru"
           fi
           echo "Используется тема: $THEME"
           echo "THEME=$THEME" >> $GITHUB_ENV
