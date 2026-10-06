@@ -132,9 +132,9 @@
     {
       "name": "Подходы",
       "keywords": [
-        "DDD (Предметно-ориентированное проектирование)",
-        "EDA (Событийно-ориентированная архитектура)",
-        "TDD (Разработка через тестирование)"
+        "Domain-Driven Design",
+        "Event-Driven Architecture",
+        "Test-Driven Development"
       ]
     },
     {
@@ -144,8 +144,8 @@
     {
       "name": "ИИ",
       "keywords": [
-        "SDD (Разработка через спецификации)",
-        "MCP (Протокол контекста модели)",
+        "Specification-Driven Development",
+        "Model Context Protocol",
         "skills / hooks"
       ]
     },
