@@ -138,16 +138,16 @@
       ]
     },
     {
+      "name": "Фреймворки",
+      "keywords": ["FastAPI", "Django"]
+    },
+    {
       "name": "ИИ",
       "keywords": [
         "SDD (Разработка через спецификации)",
         "MCP (Протокол контекста модели)",
         "skills / hooks"
       ]
-    },
-    {
-      "name": "Фреймворки",
-      "keywords": ["FastAPI", "Django"]
     },
     {
       "name": "Базы данных",
